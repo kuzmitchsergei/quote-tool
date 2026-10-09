@@ -8,7 +8,7 @@ import pandas as pd
 
 DATA = "demo_data"
 key = pd.read_csv(f"{DATA}/answer_key.csv")
-findings = {s: pd.read_csv(f"{DATA}/new_quote_OEM_{s}_2026_findings.csv") for s in ("Alpha", "Beta")}
+findings = {s: pd.read_csv(f"{DATA}/new_quote_OEM_{s}_2026_findings.csv") for s in ("Alpha", "Beta", "Gamma")}
 
 # what each kind of planted anomaly should be flagged as
 EXPECTED = {

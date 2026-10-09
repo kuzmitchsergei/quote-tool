@@ -15,6 +15,7 @@ import pandas as pd
 import streamlit as st
 
 import analyze_reply as ar
+import market
 import compare as cmp
 import draft_email as de
 import extract as ex
@@ -23,6 +24,8 @@ DATA = Path(__file__).parent / "demo_data"
 DEMO_QUOTES = {
     "OEM Alpha 2026 (demo)": ("new_quote_OEM_Alpha_2026.pdf", "reply_OEM_Alpha_2026.txt"),
     "OEM Beta 2026 (demo)": ("new_quote_OEM_Beta_2026.pdf", "reply_OEM_Beta_2026.txt"),
+    "OEM Gamma 2026 (demo: material & sub-supplier claims)": ("new_quote_OEM_Gamma_2026.pdf",
+                                                              "reply_OEM_Gamma_2026.txt"),
 }
 # status colours: (background, text) - used only on the status cell, always dark text
 RED, ORANGE, YELLOW, GREEN, BLUE = (("#fde8e8", "#9b1c1c"), ("#feecdc", "#8a3c0b"),
@@ -31,6 +34,7 @@ RED, ORANGE, YELLOW, GREEN, BLUE = (("#fde8e8", "#9b1c1c"), ("#feecdc", "#8a3c0b
 FLAG_COLORS = {"ABOVE INDEX": RED, "PART REPLACED": ORANGE, "NEW CHARGE": ORANGE,
                "UNIFORM INCREASE": YELLOW, "DECREASE": GREEN}
 VERDICT_COLORS = {"NO ANSWER": RED, "UNSUBSTANTIATED": RED, "ABOVE INDEX": RED,
+                  "WRONG MATERIAL": RED, "NOT SUPPORTED": RED, "EVIDENCE REQUESTED": ORANGE,
                   "PARTLY EXPLAINED": ORANGE, "DOCUMENTS MISSING": ORANGE,
                   "CONCESSION OFFERED": BLUE, "SUPPORTED": GREEN, "PLAUSIBLE": GREEN}
 
@@ -38,7 +42,8 @@ COLUMNS = {"part_no": "Part no.", "description": "Description", "old_price": "La
            "new_price": "New price", "change_pct": "Change", "index_pct": "Index",
            "above_index_pts": "Above index (pts)", "extra_cost_eur": "Extra cost",
            "flag": "Status", "note": "Note", "item": "Item", "verdict": "Verdict",
-           "category": "Category", "claimed_pct": "Claimed", "pos": "Pos", "unit": "Unit",
+           "category": "Category", "claimed_pct": "Claimed by supplier", "price_change_pct": "Price change",
+           "justified_pct": "Justified", "pos": "Pos", "unit": "Unit",
            "qty": "Qty", "unit_price_eur": "Unit price", "total_eur": "Total"}
 
 st.set_page_config(page_title="Quote Check", page_icon="🔍", layout="wide")
@@ -70,13 +75,14 @@ def styled(df, status_col=None, colors=None):
     for c in ("old_price", "new_price", "extra_cost_eur", "unit_price_eur", "total_eur"):
         if c in df.columns:
             df[c] = df[c].map(lambda x: fmt(x, ",.2f"))
-    for c in ("change_pct", "index_pct", "claimed_pct"):
+    for c in ("change_pct", "index_pct", "claimed_pct", "price_change_pct", "justified_pct"):
         if c in df.columns:
             df[c] = df[c].map(lambda x: "" if pd.isna(x) else f"{x:+.1f}%")
     if "above_index_pts" in df.columns:
         df["above_index_pts"] = df["above_index_pts"].map(lambda x: fmt(x, "+.1f"))
     if "category" in df.columns:
-        df["category"] = df["category"].fillna("").str.replace("_", " ").str.capitalize()
+        df["category"] = (df["category"].fillna("").str.replace("sub_supplier", "sub-supplier")
+                          .str.replace("_", " ").str.capitalize())
     df = df.fillna("").rename(columns=COLUMNS | {"supplier says": "Supplier says"})
     status = COLUMNS.get(status_col, status_col)
 
@@ -94,7 +100,7 @@ def styled(df, status_col=None, colors=None):
 
 def reset_from(step):
     """Clear results of this step and all later steps."""
-    order = ["lines", "findings", "email", "reply_results"]
+    order = ["lines", "findings", "email", "reply_results", "claims", "frame", "asked_items"]
     for key in order[order.index(step):]:
         ss.pop(key, None)
 
@@ -114,7 +120,8 @@ with st.sidebar:
                "No quotation data leaves the machine.")
     st.divider()
     st.markdown("**Price history**")
-    st.caption(f"{DATA.name}/quote_history.csv\n\n{DATA.name}/benchmark_index.csv (synthetic demo index)")
+    st.caption(f"{DATA.name}/quote_history.csv\n\n{DATA.name}/benchmark_index.csv\n\n"
+               f"{DATA.name}/market_prices.csv\n\nAll index and market values are synthetic demo data.")
     st.divider()
     tone = st.radio("Email tone", list(de.TONES), index=0, format_func=str.capitalize)
 
@@ -240,30 +247,77 @@ if "email" in ss:
         by_item = {}
         for c in claims:
             by_item.setdefault(c.item.strip().upper(), c)
-        results, rows = [], []
-        for item in items:
-            claim = by_item.get(item["id"].upper())
-            verdict, line = ar.judge(item, claim)
-            results.append((verdict, line))
-            rows.append({"item": item["id"], "verdict": verdict,
-                         "category": claim.category if claim else "",
-                         "claimed_pct": claim.claimed_pct if claim else None,
-                         "supplier says": claim.summary if claim else "— not addressed —"})
-        with st.spinner("Local AI is writing the follow-up…"):
-            frame = ar.write_followup_frame(ss.meta, results, tone)
-        ss.reply_results = pd.DataFrame(rows)
-        ss.followup = ar.assemble(frame, results)
+        ss.asked_items, ss.claims = items, by_item
+        ss.reply_results = True
+
+
+def judge_all(shares):
+    """Rules only - re-run instantly whenever the buyer edits the material shares."""
+    ctx = market.load_context(ss.meta["quote_date"], shares)
+    results, rows = [], []
+    for item in ss.asked_items:
+        claim = ss.claims.get(item["id"].upper())
+        verdict, line, justified = ar.judge(item, claim, ctx)
+        results.append((verdict, line))
+        rows.append({"item": item["id"], "verdict": verdict,
+                     "category": claim.category if claim else "",
+                     "claimed_pct": claim.claimed_pct if claim else None,
+                     "price_change_pct": item["change"],
+                     "justified_pct": justified,
+                     "supplier says": claim.summary if claim else "— not addressed —"})
+    return results, pd.DataFrame(rows), ctx
+
 
 if "reply_results" in ss:
-    r = ss.reply_results
+    all_shares = pd.read_csv(DATA / "material_shares.csv")
+    asked = [i["id"] for i in ss.asked_items]
+    relevant = all_shares[all_shares["part_no"].isin(asked)]
+    if not relevant.empty:
+        with st.expander("Material shares – your assumptions (edit to see the effect)", expanded=False):
+            st.caption("Which material drives each part's cost, and its share of the part price. "
+                       "These are the buyer's assumptions, not AI guesses.")
+            edited = st.data_editor(
+                relevant[["part_no", "material", "share_pct", "standard_component"]],
+                hide_index=True, width="stretch", key="shares_editor",
+                disabled=["part_no", "material", "standard_component"],
+                column_config={"part_no": "Part no.", "material": "Main cost material",
+                               "share_pct": st.column_config.NumberColumn("Share %", min_value=0,
+                                                                         max_value=100, step=5),
+                               "standard_component": "Standard component"})
+            all_shares = all_shares.set_index("part_no")
+            all_shares.loc[edited["part_no"], "share_pct"] = edited["share_pct"].values
+            all_shares = all_shares.reset_index()
+
+    results, r, ctx = judge_all(all_shares)
+    if "frame" not in ss:
+        with st.spinner("Local AI is writing the follow-up…"):
+            ss.frame = ar.write_followup_frame(ss.meta, results, tone)
+
     c1, c2, c3 = st.columns(3)
     c1.metric("Accepted", int(r["verdict"].isin(["SUPPORTED", "PLAUSIBLE - CHECK DOCUMENTS"]).sum()))
     c2.metric("Concessions", int((r["verdict"] == "CONCESSION OFFERED").sum()))
     c3.metric("Still open", int((~r["verdict"].isin(
         ["SUPPORTED", "PLAUSIBLE - CHECK DOCUMENTS", "CONCESSION OFFERED"])).sum()))
     st.dataframe(styled(r, "verdict", VERDICT_COLORS), hide_index=True, width="stretch")
-    st.caption("The index is a general benchmark. A specific input can rise faster than the index, "
-               "so claims above it are not called false - the tool asks for evidence.")
-    ss.followup = st.text_area("Follow-up email", ss.followup, height=420)
-    st.download_button("Download follow-up (.txt)", ss.followup,
+    st.caption("Claimed by supplier = the cost increase the supplier states (e.g. copper +18%). "
+               "Price change = how much this part's price actually rose. "
+               "Justified = material share × actual market change + rest × general cost index. "
+               "Accepted when the price change does not exceed what is justified.")
+
+    claimed = {market.commodity_of(c.material) for c in ss.claims.values() if c.material}
+    used = sorted(({k for k in relevant["material_key"]} | claimed) & set(ctx["prices"].columns))
+    if not relevant.empty and used:
+        with st.expander("Market data used (last 12 months vs. 12 months before)", expanded=False):
+            rows = []
+            for k in used:
+                avg, peak = market.market_change(ctx["prices"], k, ctx["quote_date"])
+                rows.append({"Commodity": market.COMMODITY_LABELS[k][0].upper() + market.COMMODITY_LABELS[k][1:], "12-month average": f"{avg:+.1f}%",
+                             "Peak single month": f"{peak:+.1f}%"})
+            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+            st.caption("SYNTHETIC demo data. For real use, import published monthly commodity prices "
+                       "(e.g. World Bank, LME) or national producer price indices - the tool works offline.")
+
+    followup = ar.assemble(ss.frame, results)
+    st.text_area("Follow-up email", followup, height=460, key=f"followup_{hash(followup)}")
+    st.download_button("Download follow-up (.txt)", followup,
                        file_name=f"{ss.meta['quote_number']}_followup.txt")

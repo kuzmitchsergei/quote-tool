@@ -15,6 +15,7 @@ Outputs (in ./data):
 """
 import csv
 import random
+import zlib
 from pathlib import Path
 
 from reportlab.lib import colors
@@ -284,6 +285,141 @@ beta_total, _ = build_pdf(
     "unavoidable. In addition, the price of the main drive gear (B-5563) reflects the significant "
     "increase in special steel costs.",
     beta_lines)
+
+
+# =====================================================================================
+# OEM Gamma - the "argumentation" demo: specific material and sub-supplier claims.
+# Uses its own random generator so Alpha and Beta stay exactly as before.
+# =====================================================================================
+rg = random.Random(7)
+GAMMA_ITEMS = [
+    # part no, description, unit, 2023 price, 2026 factor vs 2025 (None = normal index step)
+    ("G-7101", "Servo motor, main drive register", "pc", 5980, 1.18),
+    ("G-7115", "Wiping roller sleeve, composite with PVC layer", "pc", 7350, 1.10),
+    ("G-7122", "Inking roller, EPDM covered", "pc", 1640, 1.14),
+    ("G-7130", "Gear, hardened steel, plate cylinder drive", "pc", 3290, 1.12),
+    ("G-7144", "Bearing unit, impression cylinder (bought-in)", "pc", 2480, 1.15),
+    ("G-7158", "Frame cover, aluminium, delivery side", "pc", 1120, 1.06),
+    ("G-7163", "Ink duct roller", "pc", 1385, None),
+    ("G-7170", "Sheet sensor, infeed", "pc", 520, None),
+    ("G-7184", "Vacuum pump, delivery", "pc", 2860, None),
+    ("G-7192", "Doctor blade, wiping system (set of 5)", "set", 290, None),
+    ("G-7205", "Pneumatic cylinder, gripper opening", "pc", 640, None),
+    ("G-7219", "Drive belt, inking unit", "pc", 175, None),
+    ("SRV-GAMMA-HR", "Service technician, per hour", "h", 170, None),
+]
+GAMMA = "OEM Gamma Systems GmbH"
+
+
+def gamma_step(pn, year):
+    base_col = "LAB" if pn.startswith("SRV") else "PARTS"
+    return idx[year][base_col] / idx[year - 1][base_col] * rg.uniform(0.997, 1.008)
+
+
+gamma_prices = {}
+for pn, desc, unit, p2023, _ in GAMMA_ITEMS:
+    p = float(p2023)
+    for year in (2023, 2024, 2025):
+        if year > 2023:
+            p *= gamma_step(pn, year)
+        gamma_prices[(pn, year)] = round(p, 2)
+        history.append({"supplier": GAMMA, "quote_no": f"Q-GA-{year}-0{rg.randint(10, 99)}",
+                        "quote_date": f"{year}-03-0{rg.randint(2, 9)}", "part_no": pn,
+                        "description": desc, "unit": unit,
+                        "qty": rg.choice([1, 2, 2, 4]) if unit != "h" else 40,
+                        "unit_price_eur": round(p, 2), "currency": "EUR"})
+with open(OUT / "quote_history.csv", "w", newline="") as f:   # rewrite incl. Gamma
+    w = csv.DictWriter(f, fieldnames=list(history[0].keys()))
+    w.writeheader()
+    w.writerows(history)
+
+gamma_lines = []
+for pn, desc, unit, _, factor in GAMMA_ITEMS:
+    old = gamma_prices[(pn, 2025)]
+    new = round(old * (factor if factor else gamma_step(pn, 2026)), 2)
+    gamma_lines.append((pn, desc, unit, rg.choice([1, 2, 2, 4]) if unit != "h" else 40, new))
+    if factor:
+        key("Gamma", pn, "spike", old, new, "Price increase well above the index; supplier will "
+            "justify it with a material or sub-supplier claim (see reply_OEM_Gamma_2026.txt).")
+
+gamma_total, _ = build_pdf(
+    OUT / "new_quote_OEM_Gamma_2026.pdf",
+    GAMMA, "Werkstrasse 8, 0000 Demostadt, Austria",
+    "Q-GA-2026-009", "2026-03-04",
+    "Dear Sir or Madam, please find enclosed our spare parts and service quotation for 2026. "
+    "Due to significant increases in raw material and purchased-part costs, price adjustments on "
+    "selected items were unavoidable. We will gladly provide further details on request.",
+    gamma_lines)
+
+# ---- SYNTHETIC monthly market prices (placeholders for e.g. World Bank / LME / national indices)
+# Reference windows for the Gamma quote dated 2026-03:
+#   last 12 months  = 2025-03 .. 2026-02,   12 months before = 2024-03 .. 2025-02
+MARKET = {  # commodity: (unit, level before, level last 12 months, spike month factor or None)
+    "copper":         ("USD/t",  9000.0, 1.045, 1.18),  # avg about +5.6%, peak month +18%
+    "aluminium":      ("USD/t",  2300.0, 1.10,  None),  # about +10%
+    "steel":          ("index",   100.0, 0.97,  None),  # about -3%
+    "natural_rubber": ("USD/kg",    1.70, 1.09,  None),  # about +9%
+    "brent":          ("USD/bbl",  82.0, 0.92,  None),  # about -8%
+}
+months = [f"{y}-{m:02d}" for y in (2023, 2024, 2025, 2026) for m in range(1, 13)][:38]  # to 2026-02
+rows = []
+for month in months:
+    row = {"month": month}
+    for com, (unit, level, factor, spike) in MARKET.items():
+        wobble = 1 + 0.004 * ((zlib.crc32((com + month).encode()) % 7) - 3) / 3          # small deterministic noise
+        value = level * wobble
+        if month >= "2025-03":
+            value = level * factor * wobble
+            if spike and month == "2025-10":
+                value = level * spike
+        row[com] = round(value, 2 if level < 10 else 1)
+    rows.append(row)
+with open(OUT / "market_prices.csv", "w", newline="") as f:
+    w = csv.DictWriter(f, fieldnames=["month"] + list(MARKET))
+    w.writeheader()
+    w.writerows(rows)
+    w.writerow({"month": "note", **{c: f"SYNTHETIC demo values ({MARKET[c][0]})" for c in MARKET}})
+
+# ---- buyer's assumptions: which material drives each part's cost, and its share
+SHARES = [
+    ("G-7101", "copper", "Copper windings", 10, "no"),
+    ("G-7115", "brent", "PVC layer (oil-based plastic)", 25, "no"),
+    ("G-7122", "brent", "EPDM covering (synthetic rubber, oil-based)", 30, "no"),
+    ("G-7130", "steel", "Hardened steel", 35, "no"),
+    ("G-7144", "purchased", "Bought-in bearings", 40, "yes"),
+    ("G-7158", "aluminium", "Aluminium", 50, "no"),
+]
+with open(OUT / "material_shares.csv", "w", newline="") as f:
+    w = csv.writer(f)
+    w.writerow(["part_no", "material_key", "material", "share_pct", "standard_component", "note"])
+    for r in SHARES:
+        w.writerow(list(r) + ["buyer assumption - edit to your own knowledge"])
+
+(OUT / "reply_OEM_Gamma_2026.txt").write_text("""From: Sales, OEM Gamma Systems GmbH
+Subject: RE: Clarification request - quotation Q-GA-2026-009
+
+Dear Sir or Madam,
+
+thank you for your questions on quotation Q-GA-2026-009. Please find our explanations below.
+
+G-7101 Servo motor: copper prices on the world market have increased by 18%, which is directly reflected in the motor price.
+
+G-7115 Wiping roller sleeve: the costs of oil-based raw materials for the PVC layer have risen by 10%.
+
+G-7122 Inking roller: natural rubber prices have increased by 25% on the world market.
+
+G-7130 Gear: steel prices have increased by 12%.
+
+G-7144 Bearing unit: our sub-supplier for the bearings has increased its prices by 15%, which we have to pass on.
+
+G-7158 Frame cover: aluminium prices have increased by 10% over the last year.
+
+We hope this clarifies the adjustments.
+
+Kind regards
+Sales Department
+""")
+print(f"Gamma 2026 total: EUR {gamma_total:,.2f}")
 
 for row in answer_key:
     if row["part_no"] == "FEE-ENERGY":

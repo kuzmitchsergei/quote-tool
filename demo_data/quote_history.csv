@@ -119,3 +119,42 @@ OEM Beta Precision AG,Q-BE-2025-010,2025-02-16,SRV-BETA-HR,"Service engineer, pe
 OEM Beta Precision AG,Q-BE-2023-032,2023-04-18,SRV-BETA-REM,"Remote diagnostics, per hour",h,60,130.0,EUR
 OEM Beta Precision AG,Q-BE-2024-041,2024-02-17,SRV-BETA-REM,"Remote diagnostics, per hour",h,40,134.77,EUR
 OEM Beta Precision AG,Q-BE-2025-095,2025-04-18,SRV-BETA-REM,"Remote diagnostics, per hour",h,80,140.5,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-051,2023-03-04,G-7101,"Servo motor, main drive register",pc,4,5980.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-019,2024-03-03,G-7101,"Servo motor, main drive register",pc,2,6161.01,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-074,2025-03-05,G-7101,"Servo motor, main drive register",pc,1,6320.6,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-021,2023-03-08,G-7115,"Wiping roller sleeve, composite with PVC layer",pc,4,7350.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-021,2024-03-08,G-7115,"Wiping roller sleeve, composite with PVC layer",pc,1,7524.27,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-025,2025-03-05,G-7115,"Wiping roller sleeve, composite with PVC layer",pc,1,7739.84,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-083,2023-03-08,G-7122,"Inking roller, EPDM covered",pc,1,1640.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-015,2024-03-04,G-7122,"Inking roller, EPDM covered",pc,2,1695.66,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-079,2025-03-03,G-7122,"Inking roller, EPDM covered",pc,2,1736.47,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-081,2023-03-04,G-7130,"Gear, hardened steel, plate cylinder drive",pc,1,3290.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-091,2024-03-05,G-7130,"Gear, hardened steel, plate cylinder drive",pc,2,3387.01,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-018,2025-03-02,G-7130,"Gear, hardened steel, plate cylinder drive",pc,2,3456.26,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-073,2023-03-08,G-7144,"Bearing unit, impression cylinder (bought-in)",pc,2,2480.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-068,2024-03-07,G-7144,"Bearing unit, impression cylinder (bought-in)",pc,2,2549.88,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-033,2025-03-05,G-7144,"Bearing unit, impression cylinder (bought-in)",pc,1,2606.34,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-083,2023-03-06,G-7158,"Frame cover, aluminium, delivery side",pc,4,1120.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-067,2024-03-06,G-7158,"Frame cover, aluminium, delivery side",pc,1,1156.73,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-063,2025-03-04,G-7158,"Frame cover, aluminium, delivery side",pc,2,1180.65,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-029,2023-03-09,G-7163,Ink duct roller,pc,4,1385.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-095,2024-03-03,G-7163,Ink duct roller,pc,2,1417.36,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-054,2025-03-09,G-7163,Ink duct roller,pc,4,1450.21,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-018,2023-03-03,G-7170,"Sheet sensor, infeed",pc,2,520.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-095,2024-03-03,G-7170,"Sheet sensor, infeed",pc,1,534.7,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-049,2025-03-09,G-7170,"Sheet sensor, infeed",pc,2,549.45,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-059,2023-03-07,G-7184,"Vacuum pump, delivery",pc,1,2860.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-055,2024-03-04,G-7184,"Vacuum pump, delivery",pc,1,2955.92,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-037,2025-03-06,G-7184,"Vacuum pump, delivery",pc,2,3029.53,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-041,2023-03-08,G-7192,"Doctor blade, wiping system (set of 5)",set,4,290.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-073,2024-03-03,G-7192,"Doctor blade, wiping system (set of 5)",set,2,299.65,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-080,2025-03-06,G-7192,"Doctor blade, wiping system (set of 5)",set,2,306.96,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-065,2023-03-06,G-7205,"Pneumatic cylinder, gripper opening",pc,4,640.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-097,2024-03-08,G-7205,"Pneumatic cylinder, gripper opening",pc,2,661.8,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-032,2025-03-04,G-7205,"Pneumatic cylinder, gripper opening",pc,2,675.72,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-094,2023-03-05,G-7219,"Drive belt, inking unit",pc,1,175.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-085,2024-03-04,G-7219,"Drive belt, inking unit",pc,2,179.97,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-028,2025-03-08,G-7219,"Drive belt, inking unit",pc,2,184.02,EUR
+OEM Gamma Systems GmbH,Q-GA-2023-088,2023-03-07,SRV-GAMMA-HR,"Service technician, per hour",h,40,170.0,EUR
+OEM Gamma Systems GmbH,Q-GA-2024-098,2024-03-02,SRV-GAMMA-HR,"Service technician, per hour",h,40,178.29,EUR
+OEM Gamma Systems GmbH,Q-GA-2025-097,2025-03-08,SRV-GAMMA-HR,"Service technician, per hour",h,40,184.66,EUR

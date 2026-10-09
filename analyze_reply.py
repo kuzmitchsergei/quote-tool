@@ -30,6 +30,7 @@ import pandas as pd
 from ollama import chat
 from pydantic import BaseModel
 
+import market
 from draft_email import MODEL, SIGNOFF, TONES, EmailFrame, clean_text, has_figures, pct
 
 TOLERANCE_PTS = 3.0   # claimed cost driver vs. index
@@ -48,19 +49,20 @@ def questioned_items(df):
                       "flag": "UNIFORM INCREASE"})
     for _, r in df[df["flag"].isin(QUESTIONED[:3])].iterrows():
         label = re.sub(r"\s*\((replaces [^)]*|new)\)", "", r["description"])
-        items.append({"id": r["part_no"], "label": label,
+        items.append({"id": r["part_no"], "label": label, "old_price": r["old_price"],
                       "change": r["change_pct"], "index": r["index_pct"], "flag": r["flag"]})
     return items
 
 
 # -------------------------------------------------- 1. AI reads the reply
-Category = Literal["raw_material", "energy", "labour", "technical_change",
+Category = Literal["raw_material", "energy", "labour", "technical_change", "sub_supplier",
                    "market_conditions", "other"]
 
 
 class Claim(BaseModel):
     item: str                       # one of the item ids we give the model
     category: Category
+    material: str | None            # raw material / commodity the supplier names, e.g. "copper"
     claimed_pct: float | None       # only if the supplier writes a percentage
     documents_attached: bool        # supplier says a document/datasheet/breakdown is attached
     concession: bool                # supplier offers to reduce, waive or withdraw something
@@ -78,7 +80,10 @@ We had asked the supplier to justify these items (id: description):
 For every justification in the reply, return one claim with:
 - item: the id from the list above that the justification refers to. Use "ALL" for a general
   increase on all parts. Use the exact id.
-- category: raw_material, energy, labour, technical_change, market_conditions or other
+- category: raw_material, energy, labour, technical_change, sub_supplier (a supplier or vendor
+  of the supplier raised its prices), market_conditions or other
+- material: the raw material or commodity the supplier names (e.g. "copper", "steel",
+  "natural rubber", "oil-based raw materials"), exactly as written; null if none is named
 - claimed_pct: the percentage the supplier states for this cost driver, only if written in the
   reply, otherwise null
 - documents_attached: true only if the reply says a document, datasheet or breakdown is attached
@@ -103,37 +108,53 @@ def read_reply(reply_text, items):
 
 
 # ----------------------------------------------- 2. Python judges each claim
-def judge(item, claim):
-    """Fixed rules. Returns (verdict, follow-up line for the email)."""
+def judge(item, claim, ctx=None):
+    """Fixed rules. Returns (verdict, follow-up line for the email, justified % or None).
+    ctx (from market.load_context) enables the market-data and sub-supplier checks."""
+    verdict, line, justified = _judge(item, claim, ctx)
+    return verdict, line, justified
+
+
+def _judge(item, claim, ctx):
     i, label = item["id"], item["label"]
     name = "General increase" if i == "ALL" else f"{i} ({label})"
     chg, idx = item["change"], item["index"]
 
     if claim is None:
-        return "NO ANSWER", f"{name}: not addressed in your reply. Please provide your explanation."
+        return "NO ANSWER", f"{name}: not addressed in your reply. Please provide your explanation.", None
 
     if claim.concession:
         return "CONCESSION OFFERED", (f"{name}: we take note of the offer in your reply. "
-                                      "Please confirm it, with any conditions, in a revised quotation.")
+                                      "Please confirm it, with any conditions, in a revised quotation."), None
 
     if claim.category == "technical_change":
         if claim.documents_attached:
             return "PLAUSIBLE - CHECK DOCUMENTS", (
                 f"{name}: thank you for explaining the technical change and providing documentation, "
-                "which we will review with our technical team.")
+                "which we will review with our technical team."), None
         return "DOCUMENTS MISSING", (f"{name}: please provide technical documentation of the change "
-                                     "that justifies the new price.")
+                                     "that justifies the new price."), None
 
     if claim.category in ("market_conditions", "other"):
         extra = (f" Your stated adjustment of {pct(claim.claimed_pct)} compares with "
                  f"{pct(idx)} for the relevant cost index." if claim.claimed_pct is not None and pd.notna(idx) else "")
         return "UNSUBSTANTIATED", (f"{name}: a reference to market conditions is not a cost driver.{extra} "
-                                   "Please provide a breakdown of the specific cost increases.")
+                                   "Please provide a breakdown of the specific cost increases."), None
 
-    # raw_material / energy / labour
+    if ctx is not None and claim.category == "sub_supplier":
+        return market.check_sub_supplier(item, claim, ctx, name)
+    if ctx is not None and claim.category in ("raw_material", "energy"):
+        result = market.check_material(item, claim, ctx, name)
+        if result is not None:
+            return result
+    if claim.category == "sub_supplier":
+        return "EVIDENCE REQUESTED", (f"{name}: please send us the sub-supplier's price notification "
+                                      "and the share of the bought-in component in this part's cost."), None
+
+    # raw_material / energy / labour without market data for this part
     if claim.claimed_pct is None:
         return "UNSUBSTANTIATED", (f"{name}: please quantify the stated {claim.category.replace('_', ' ')} "
-                                   "cost increase and provide supporting evidence.")
+                                   "cost increase and provide supporting evidence."), None
 
     issues, verdicts = [], []
     if pd.notna(idx) and claim.claimed_pct - idx > TOLERANCE_PTS:
@@ -146,8 +167,8 @@ def judge(item, claim):
                       f"{pct(chg)} price increase; please explain the remaining "
                       f"{chg - claim.claimed_pct:.1f} points")
     if not issues:
-        return "SUPPORTED", f"{name}: thank you, your explanation is consistent with our data."
-    return " / ".join(verdicts), f"{name}: " + ". Also, ".join(issues) + "."
+        return "SUPPORTED", f"{name}: thank you, your explanation is consistent with our data.", None
+    return " / ".join(verdicts), f"{name}: " + ". Also, ".join(issues) + ".", None
 
 
 # ---------------------------------------------- 3. follow-up email
@@ -227,6 +248,7 @@ if __name__ == "__main__":
     findings = pd.read_csv(f"{base}_findings.csv")
     meta = json.loads(Path(f"{base}_meta.json").read_text())
     items = questioned_items(findings)
+    ctx = market.load_context(meta.get("quote_date", ""))
 
     print("Asking the local AI to read the supplier's reply...")
     claims = read_reply(Path(args.reply).read_text(), items)
@@ -237,11 +259,13 @@ if __name__ == "__main__":
     results, rows = [], []
     for item in items:
         claim = by_item.get(item["id"].upper())
-        verdict, line = judge(item, claim)
+        verdict, line, justified = judge(item, claim, ctx)
         results.append((verdict, line))
         rows.append({"item": item["id"], "verdict": verdict,
                      "category": claim.category if claim else "",
                      "claimed_pct": claim.claimed_pct if claim else None,
+                     "price_change_pct": item["change"],
+                     "justified_pct": round(justified, 1) if justified is not None else None,
                      "supplier_says": claim.summary if claim else ""})
     unmatched = [c for c in claims if c.item.strip().upper() not in {i["id"].upper() for i in items}]
 

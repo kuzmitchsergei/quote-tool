@@ -1,0 +1,7 @@
+part_no,material_key,material,share_pct,standard_component,note
+G-7101,copper,Copper windings,10,no,buyer assumption - edit to your own knowledge
+G-7115,brent,PVC layer (oil-based plastic),25,no,buyer assumption - edit to your own knowledge
+G-7122,brent,"EPDM covering (synthetic rubber, oil-based)",30,no,buyer assumption - edit to your own knowledge
+G-7130,steel,Hardened steel,35,no,buyer assumption - edit to your own knowledge
+G-7144,purchased,Bought-in bearings,40,yes,buyer assumption - edit to your own knowledge
+G-7158,aluminium,Aluminium,50,no,buyer assumption - edit to your own knowledge

@@ -9,3 +9,9 @@ Alpha,FEE-ENERGY,new_percentage_surcharge,0,3599.6,,New 3.5% surcharge on total 
 Beta,B-5563,spike_with_claim,7977.44,9174.06,15.0,+15% on main drive gear. Supplier cover letter claims steel costs; machinery parts index only ~+2%. Justification weak.
 Beta,B-5584,spike,4487.54,5474.8,22.0,"+22% on camera lens, no explanation given."
 Beta,ALL PARTS,blanket_increase_above_index,,,,"Cover letter claims a general +6% on all parts 'due to energy and raw material costs'. Machinery parts index rose only ~+2.1% (104.9 -> 107.1), so ~4 points are not explained by the data."
+Gamma,G-7101,spike,6320.6,7458.31,18.0,Price increase well above the index; supplier will justify it with a material or sub-supplier claim (see reply_OEM_Gamma_2026.txt).
+Gamma,G-7115,spike,7739.84,8513.82,10.0,Price increase well above the index; supplier will justify it with a material or sub-supplier claim (see reply_OEM_Gamma_2026.txt).
+Gamma,G-7122,spike,1736.47,1979.58,14.0,Price increase well above the index; supplier will justify it with a material or sub-supplier claim (see reply_OEM_Gamma_2026.txt).
+Gamma,G-7130,spike,3456.26,3871.01,12.0,Price increase well above the index; supplier will justify it with a material or sub-supplier claim (see reply_OEM_Gamma_2026.txt).
+Gamma,G-7144,spike,2606.34,2997.29,15.0,Price increase well above the index; supplier will justify it with a material or sub-supplier claim (see reply_OEM_Gamma_2026.txt).
+Gamma,G-7158,spike,1180.65,1251.49,6.0,Price increase well above the index; supplier will justify it with a material or sub-supplier claim (see reply_OEM_Gamma_2026.txt).
