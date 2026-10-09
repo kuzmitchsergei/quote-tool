@@ -113,8 +113,8 @@ def judge(item, claim):
         return "NO ANSWER", f"{name}: not addressed in your reply. Please provide your explanation."
 
     if claim.concession:
-        return "CONCESSION OFFERED", (f"{name}: we note your offer ({claim.summary.rstrip('.')}). "
-                                      "Please confirm it in a revised quotation.")
+        return "CONCESSION OFFERED", (f"{name}: we take note of the offer in your reply. "
+                                      "Please confirm it, with any conditions, in a revised quotation.")
 
     if claim.category == "technical_change":
         if claim.documents_attached:
