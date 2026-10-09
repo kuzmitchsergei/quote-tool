@@ -1,0 +1,25 @@
+pos,part_no,description,unit,qty,unit_price_eur,total_eur
+10,A-10021,"Gripper bar assembly, feeder",pc,2.0,5173.76,10347.52
+20,A-10045,Impression cylinder bearing set,set,4.0,3340.14,13360.56
+30,A-10078,"Ink fountain blade, intaglio",pc,4.0,731.1,2924.4
+40,A-10102,Wiping roller sleeve,pc,1.0,2407.96,2407.96
+50,A-10133-B,Wiping solution pump (replaces A-10133),pc,2.0,2633.74,5267.48
+60,A-10150,Doctor blade holder,pc,2.0,964.7,1929.4
+70,A-10188,Sheet transfer gripper pad (set of 20),set,1.0,447.64,447.64
+80,A-10204,"Vacuum belt, delivery",pc,2.0,1385.53,2771.06
+90,A-10219,"Servo motor, register control",pc,4.0,9202.21,36808.84
+100,A-10236,"Encoder, main drive",pc,1.0,1714.93,1714.93
+110,A-10251,Safety light curtain,pc,1.0,3018.99,3018.99
+120,A-10270,Pneumatic valve block,pc,1.0,1230.1,1230.1
+130,A-10288,"Chain link set, delivery",set,2.0,3763.92,7527.84
+140,A-10305,"Filter cartridge, wiping system",pc,4.0,164.17,656.68
+150,A-10319,"Infeed sensor, sheet detection",pc,1.0,504.5,504.5
+160,A-10333,"Control board, ink zone",pc,1.0,4184.9,4184.9
+170,A-10347,Plate clamp kit,kit,1.0,779.51,779.51
+180,A-10362,"Drive belt, numbering unit",pc,2.0,334.26,668.52
+190,A-10378,"Numbering box, 7-digit",pc,2.0,1978.38,3956.76
+200,A-10391,"Lubrication pump, central",pc,1.0,2338.18,2338.18
+210,SRV-ALPHA-HR,"Service technician, per hour",h,40.0,195.75,7830.0
+220,SRV-ALPHA-REM,"Remote support, per hour",h,60.0,135.07,8104.2
+230,FEE-TRAVEL,Travel flat fee per service visit (new),visit,3.0,890.0,2670.0
+240,FEE-ENERGY,"Energy & logistics surcharge, 3.5% of parts value (new)",lot,1.0,3599.6,3599.6

@@ -1,0 +1,18 @@
+{
+  "supplier": "OEM Beta Precision AG",
+  "quote_number": "Q-BE-2026-017",
+  "quote_date": "2026-03-20",
+  "stated_reasons": [
+    {
+      "reason": "increased energy and raw material costs",
+      "applies_to": "spare parts",
+      "claimed_increase_pct": 6.0
+    },
+    {
+      "reason": "significant increase in special steel costs",
+      "applies_to": "main drive gear (B-5563)",
+      "claimed_increase_pct": null
+    }
+  ],
+  "new_charges_mentioned": []
+}

@@ -1,0 +1,11 @@
+supplier,part_no,anomaly_type,price_2025,price_2026,change_pct,what_the_tool_should_find
+Alpha,A-10133 -> A-10133-B,part_supersession,2057.61,2633.74,28.0,Old part number replaced by new one at +28%. Exact part-number matching misses it; tool must link via description / 'replaces' note and ask for technical justification.
+Alpha,A-10219,spike,6716.94,9202.21,37.0,"Unexplained +37% on servo motor, far above index (~+2%)."
+Alpha,A-10305,small_item_spike,101.34,164.17,62.0,"Low-value consumable +62%. Easy to miss in total value, big % jump."
+Alpha,A-10391,decrease,2435.6,2338.18,-4.0,Price went DOWN 4%. Tool must not flag as a problem (good news).
+Alpha,SRV-ALPHA-HR,labour_above_index,178.77,195.75,9.5,Technician rate +9.5% vs labour index ~+3%.
+Alpha,FEE-TRAVEL,new_fee,0,890.0,,New line not present in any previous quote. Tool must flag new charges separately.
+Alpha,FEE-ENERGY,new_percentage_surcharge,0,3599.6,,New 3.5% surcharge on total parts value. Effective increase hidden outside unit prices.
+Beta,B-5563,spike_with_claim,7977.44,9174.06,15.0,+15% on main drive gear. Supplier cover letter claims steel costs; machinery parts index only ~+2%. Justification weak.
+Beta,B-5584,spike,4487.54,5474.8,22.0,"+22% on camera lens, no explanation given."
+Beta,ALL PARTS,blanket_increase_above_index,,,,"Cover letter claims a general +6% on all parts 'due to energy and raw material costs'. Machinery parts index rose only ~+2.1% (104.9 -> 107.1), so ~4 points are not explained by the data."

@@ -1,0 +1,19 @@
+pos,part_no,description,unit,qty,unit_price_eur,total_eur
+10,B-5501,Blanket cylinder bearing,pc,4.0,2957.23,11828.92
+20,B-5514,Dampening roller,pc,1.0,1343.87,1343.87
+30,B-5522,"Ink roller, rubber covered",pc,4.0,1106.68,4426.72
+40,B-5538,Feeder sucker head (set of 4),set,2.0,598.11,1196.22
+50,B-5546,Register cam assembly,pc,2.0,4198.4,8396.8
+60,B-5559,Side lay sensor,pc,1.0,681.97,681.97
+70,B-5563,Main drive gear,pc,2.0,9174.06,18348.12
+80,B-5577,"Air pump, feeder",pc,2.0,2401.42,4802.84
+90,B-5584,Inspection camera lens,pc,2.0,5474.8,10949.6
+100,B-5590,"LED light bar, inspection",pc,2.0,1956.24,3912.48
+110,B-5602,Delivery pile plate,pc,4.0,1622.37,6489.48
+120,B-5615,Gripper spring set,set,4.0,289.92,1159.68
+130,B-5629,"Touch panel, operator console",pc,4.0,5786.83,23147.32
+140,B-5633,Coolant hose kit,kit,1.0,380.57,380.57
+150,B-5648,Sheet guide plate,pc,2.0,772.48,1544.96
+160,B-5651,"Cutting knife, inline",pc,1.0,1531.95,1531.95
+170,SRV-BETA-HR,"Service engineer, per hour",h,60.0,196.35,11781.0
+180,SRV-BETA-REM,"Remote diagnostics, per hour",h,60.0,144.03,8641.8

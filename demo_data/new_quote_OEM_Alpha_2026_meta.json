@@ -1,0 +1,21 @@
+{
+  "supplier": "OEM Alpha Druckmaschinen GmbH",
+  "quote_number": "Q-AL-2026-041",
+  "quote_date": "2026-03-12",
+  "stated_reasons": [
+    {
+      "reason": "general development of costs",
+      "applies_to": "all spare parts",
+      "claimed_increase_pct": null
+    },
+    {
+      "reason": "reflect current market conditions",
+      "applies_to": "all spare parts",
+      "claimed_increase_pct": null
+    }
+  ],
+  "new_charges_mentioned": [
+    "travel flat fee",
+    "energy & logistics surcharge"
+  ]
+}

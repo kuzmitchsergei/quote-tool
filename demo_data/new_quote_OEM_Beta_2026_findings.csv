@@ -1,0 +1,19 @@
+part_no,description,old_price,new_price,change_pct,index_pct,above_index_pts,extra_cost_eur,flag,note
+B-5501,Blanket cylinder bearing,2789.84,2957.23,6.0,2.1,3.9,435.52,BLANKET INCREASE,Same +6.0% as most other parts
+B-5514,Dampening roller,1267.8,1343.87,6.0,2.1,3.9,49.48,BLANKET INCREASE,Same +6.0% as most other parts
+B-5522,"Ink roller, rubber covered",1044.04,1106.68,6.0,2.1,3.9,162.98,BLANKET INCREASE,Same +6.0% as most other parts
+B-5538,Feeder sucker head (set of 4),564.25,598.11,6.0,2.1,3.9,44.05,BLANKET INCREASE,Same +6.0% as most other parts
+B-5546,Register cam assembly,3960.75,4198.4,6.0,2.1,3.9,309.17,BLANKET INCREASE,Same +6.0% as most other parts
+B-5559,Side lay sensor,643.37,681.97,6.0,2.1,3.9,25.11,BLANKET INCREASE,Same +6.0% as most other parts
+B-5563,Main drive gear,7977.44,9174.06,15.0,2.1,12.9,2058.63,ABOVE INDEX,
+B-5577,"Air pump, feeder",2265.49,2401.42,6.0,2.1,3.9,176.83,BLANKET INCREASE,Same +6.0% as most other parts
+B-5584,Inspection camera lens,4487.54,5474.8,22.0,2.1,19.9,1786.29,ABOVE INDEX,
+B-5590,"LED light bar, inspection",1845.51,1956.24,6.0,2.1,3.9,144.05,BLANKET INCREASE,Same +6.0% as most other parts
+B-5602,Delivery pile plate,1530.54,1622.37,6.0,2.1,3.9,238.92,BLANKET INCREASE,Same +6.0% as most other parts
+B-5615,Gripper spring set,273.51,289.92,6.0,2.1,3.9,42.7,BLANKET INCREASE,Same +6.0% as most other parts
+B-5629,"Touch panel, operator console",5459.27,5786.83,6.0,2.1,3.9,852.27,BLANKET INCREASE,Same +6.0% as most other parts
+B-5633,Coolant hose kit,359.03,380.57,6.0,2.1,3.9,14.01,BLANKET INCREASE,Same +6.0% as most other parts
+B-5648,Sheet guide plate,728.75,772.48,6.0,2.1,3.9,56.89,BLANKET INCREASE,Same +6.0% as most other parts
+B-5651,"Cutting knife, inline",1445.24,1531.95,6.0,2.1,3.9,56.4,BLANKET INCREASE,Same +6.0% as most other parts
+SRV-BETA-HR,"Service engineer, per hour",190.75,196.35,2.9,3.0,-0.0,0.0,OK,
+SRV-BETA-REM,"Remote diagnostics, per hour",140.5,144.03,2.5,3.0,-0.5,0.0,OK,

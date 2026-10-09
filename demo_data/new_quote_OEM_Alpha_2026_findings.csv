@@ -1,0 +1,25 @@
+part_no,description,old_price,new_price,change_pct,index_pct,above_index_pts,extra_cost_eur,flag,note
+A-10021,"Gripper bar assembly, feeder",5065.49,5173.76,2.1,2.1,0.0,4.07,OK,
+A-10045,Impression cylinder bearing set,3253.91,3340.14,2.7,2.1,0.6,71.95,OK,
+A-10078,"Ink fountain blade, intaglio",714.47,731.1,2.3,2.1,0.2,6.58,OK,
+A-10102,Wiping roller sleeve,2352.43,2407.96,2.4,2.1,0.3,6.19,OK,
+A-10133-B,Wiping solution pump (replaces A-10133),2057.61,2633.74,28.0,2.1,25.9,1065.95,PART REPLACED,"New part number, replaces A-10133"
+A-10150,Doctor blade holder,937.72,964.7,2.9,2.1,0.8,14.63,OK,
+A-10188,Sheet transfer gripper pad (set of 20),437.29,447.64,2.4,2.1,0.3,1.18,OK,
+A-10204,"Vacuum belt, delivery",1344.59,1385.53,3.0,2.1,0.9,25.48,OK,
+A-10219,"Servo motor, register control",6716.94,9202.21,37.0,2.1,34.9,9377.6,ABOVE INDEX,
+A-10236,"Encoder, main drive",1674.28,1714.93,2.4,2.1,0.3,5.54,OK,
+A-10251,Safety light curtain,2957.96,3018.99,2.1,2.1,-0.0,0.0,OK,
+A-10270,Pneumatic valve block,1196.3,1230.1,2.8,2.1,0.7,8.71,OK,
+A-10288,"Chain link set, delivery",3688.01,3763.92,2.1,2.1,-0.0,0.0,OK,
+A-10305,"Filter cartridge, wiping system",101.34,164.17,62.0,2.1,59.9,242.82,ABOVE INDEX,
+A-10319,"Infeed sensor, sheet detection",495.94,504.5,1.7,2.1,-0.4,0.0,OK,
+A-10333,"Control board, ink zone",4103.32,4184.9,2.0,2.1,-0.1,0.0,OK,
+A-10347,Plate clamp kit,758.18,779.51,2.8,2.1,0.7,5.43,OK,
+A-10362,"Drive belt, numbering unit",326.72,334.26,2.3,2.1,0.2,1.38,OK,
+A-10378,"Numbering box, 7-digit",1929.59,1978.38,2.5,2.1,0.4,16.64,OK,
+A-10391,"Lubrication pump, central",2435.6,2338.18,-4.0,2.1,-6.1,0.0,DECREASE,
+SRV-ALPHA-HR,"Service technician, per hour",178.77,195.75,9.5,3.0,6.5,466.54,ABOVE INDEX,
+SRV-ALPHA-REM,"Remote support, per hour",129.98,135.07,3.9,3.0,0.9,73.47,OK,
+FEE-TRAVEL,Travel flat fee per service visit (new),,890.0,,,,2670.0,NEW CHARGE,Not in any previous quote
+FEE-ENERGY,"Energy & logistics surcharge, 3.5% of parts value (new)",,3599.6,,,,3599.6,NEW CHARGE,Not in any previous quote
