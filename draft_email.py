@@ -142,7 +142,8 @@ Write:
   and offer a call to discuss.
 
 IMPORTANT: do NOT write any numbers, percentages, prices, part numbers or dates in the opening or
-closing. The subject may contain the quotation number only. Sign off with no name.
+closing. The subject may contain the quotation number only. Do not add a greeting or sign-off
+line at the end - it is added automatically.
 """
 
 FALLBACK = {
@@ -150,13 +151,24 @@ FALLBACK = {
                      opening="Thank you for your quotation. Before we can proceed, we would like to "
                              "ask you to clarify the following positions.",
                      closing="We would appreciate a written answer with supporting documents within "
-                             "two weeks. We are happy to discuss this in a call.\n\nKind regards"),
+                             "two weeks. We are happy to discuss this in a call."),
     "de": EmailFrame(subject="Bitte um Klärung - Angebot {q}",
                      opening="Vielen Dank für Ihr Angebot. Bevor wir weiterfahren können, bitten wir "
                              "Sie um Klärung der folgenden Positionen.",
                      closing="Wir bitten um eine schriftliche Antwort mit Belegen innert zwei Wochen. "
-                             "Gerne besprechen wir die Punkte auch telefonisch.\n\nFreundliche Grüsse"),
+                             "Gerne besprechen wir die Punkte auch telefonisch."),
 }
+
+
+SIGNOFF = {"en": "Kind regards", "de": "Freundliche Grüsse"}
+SIGNOFF_LINE = re.compile(r"^\W*(kind|best|warm)?\s*regards\W*$|^\W*(sincerely|yours.*|no name|"
+                          r"freundliche grüsse|mit freundlichen grüssen|beste grüsse)\W*$", re.I)
+
+
+def clean_closing(text):
+    """Remove any greeting/sign-off lines the AI added - Python adds the sign-off itself."""
+    lines = [l for l in text.strip().splitlines() if not SIGNOFF_LINE.match(l.strip())]
+    return "\n".join(lines).strip().rstrip(",")
 
 
 def has_figures(text, allowed=""):
@@ -175,11 +187,12 @@ def write_frame(meta, tone, lang):
         options={"temperature": 0.3},
     )
     frame = EmailFrame.model_validate_json(response.message.content)
+    frame.closing = clean_closing(frame.closing)
 
     q = meta.get("quote_number", "")
     problems = [part for part, text, allowed in (("subject", frame.subject, q),
-                                                  ("opening", frame.opening, ""),
-                                                  ("closing", frame.closing, ""))
+                                                  ("opening", frame.opening, q),
+                                                  ("closing", frame.closing, q))
                 if has_figures(text, allowed)]
     if problems:
         print(f"GUARD: the AI put figures into the {', '.join(problems)} - using standard text there.")
@@ -199,7 +212,7 @@ def assemble(frame, items, thanks, impact, lang):
     body += ["", impact]
     if thanks:
         body += [""] + thanks
-    body += ["", frame.closing]
+    body += ["", frame.closing, "", SIGNOFF[lang]]
     return f"Subject: {frame.subject}\n\n" + "\n".join(body)
 
 

@@ -1,0 +1,7 @@
+item,verdict,category,claimed_pct,supplier_says
+A-10133-B,NO ANSWER,,,
+A-10219,PLAUSIBLE - CHECK DOCUMENTS,technical_change,,The price reflects a technical change due to new safety standards requiring an integrated safe torque off function.
+A-10305,UNSUBSTANTIATED,raw_material,,The price reflects increased raw material costs for the filter media.
+SRV-ALPHA-HR,ABOVE INDEX / PARTLY EXPLAINED,labour,6.5,The technician rate reflects wage increases due to a collective labour agreement.
+FEE-TRAVEL,CONCESSION OFFERED,other,,The travel flat fee can be waived for customers with an active service contract.
+FEE-ENERGY,UNSUBSTANTIATED,energy,,The surcharge reflects significantly increased energy costs in production and logistics.
