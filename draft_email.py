@@ -129,7 +129,8 @@ LANGS = {"en": "English", "de": "German (Swiss business style, use 'ss' instead 
 
 PROMPT = """You are writing on behalf of the procurement department of a printing works to a supplier.
 The supplier sent quotation {quote_no} dated {quote_date}. Our analysis found price increases that we
-want explained. The detailed list of items will be inserted between your opening and your closing.
+want explained. Our program adds the detailed list of items automatically between your opening and your closing.
+Do not write the list and do not write any placeholder for it.
 
 Supplier's own explanation in their cover letter: {reasons}
 
@@ -165,10 +166,18 @@ SIGNOFF_LINE = re.compile(r"^\W*(kind|best|warm)?\s*regards\W*$|^\W*(sincerely|y
                           r"freundliche grüsse|mit freundlichen grüssen|beste grüsse)\W*$", re.I)
 
 
-def clean_closing(text):
-    """Remove any greeting/sign-off lines the AI added - Python adds the sign-off itself."""
-    lines = [l for l in text.strip().splitlines() if not SIGNOFF_LINE.match(l.strip())]
+PLACEHOLDER = re.compile(r"\[[^\]]*\]|\binsert\b|\bplaceholder\b", re.I)
+
+
+def clean_text(text):
+    """Remove placeholder lines like '[Insert list here]' and any greeting/sign-off lines.
+    Python inserts the item list and adds the sign-off itself."""
+    lines = [l for l in text.strip().splitlines()
+             if not SIGNOFF_LINE.match(l.strip()) and not PLACEHOLDER.search(l)]
     return "\n".join(lines).strip().rstrip(",")
+
+
+clean_closing = clean_text   # old name, kept for compatibility
 
 
 def has_figures(text, allowed=""):
@@ -187,15 +196,16 @@ def write_frame(meta, tone, lang):
         options={"temperature": 0.3},
     )
     frame = EmailFrame.model_validate_json(response.message.content)
-    frame.closing = clean_closing(frame.closing)
+    frame.opening = clean_text(frame.opening)
+    frame.closing = clean_text(frame.closing)
 
     q = meta.get("quote_number", "")
     problems = [part for part, text, allowed in (("subject", frame.subject, q),
                                                   ("opening", frame.opening, q),
                                                   ("closing", frame.closing, q))
-                if has_figures(text, allowed)]
+                if has_figures(text, allowed) or not text.strip()]
     if problems:
-        print(f"GUARD: the AI put figures into the {', '.join(problems)} - using standard text there.")
+        print(f"GUARD: AI text had figures or was empty in the {', '.join(problems)} - using standard text there.")
         fb = FALLBACK[lang]
         frame = EmailFrame(
             subject=fb.subject.format(q=q) if "subject" in problems else frame.subject,

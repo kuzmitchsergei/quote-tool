@@ -30,7 +30,7 @@ import pandas as pd
 from ollama import chat
 from pydantic import BaseModel
 
-from draft_email import MODEL, SIGNOFF, TONES, EmailFrame, clean_closing, has_figures, pct
+from draft_email import MODEL, SIGNOFF, TONES, EmailFrame, clean_text, has_figures, pct
 
 TOLERANCE_PTS = 3.0   # claimed cost driver vs. index
 GAP_PTS = 1.0         # claimed cost driver vs. actual price increase
@@ -153,7 +153,8 @@ def judge(item, claim):
 # ---------------------------------------------- 3. follow-up email
 FOLLOWUP_PROMPT = """You are writing on behalf of the procurement department of a printing works to a supplier.
 This is our follow-up after the supplier answered our questions about quotation {quote_no}.
-A list of our item-by-item responses will be inserted between your opening and your closing.
+Our program adds the item-by-item responses automatically between your opening and your closing.
+Do not write them and do not write any placeholder for them.
 
 Overall: {summary}
 Tone: {tone}. Write in English.
@@ -188,11 +189,12 @@ def write_followup_frame(meta, results, tone):
         options={"temperature": 0.3},
     )
     frame = EmailFrame.model_validate_json(response.message.content)
-    frame.closing = clean_closing(frame.closing)
+    frame.opening = clean_text(frame.opening)
+    frame.closing = clean_text(frame.closing)
     bad = [n for n, t, a in (("subject", frame.subject, q), ("opening", frame.opening, q),
-                             ("closing", frame.closing, q)) if has_figures(t, a)]
+                             ("closing", frame.closing, q)) if has_figures(t, a) or not t.strip()]
     if bad:
-        print(f"GUARD: the AI put figures into the {', '.join(bad)} - using standard text there.")
+        print(f"GUARD: AI text had figures or was empty in the {', '.join(bad)} - using standard text there.")
         frame = EmailFrame(subject=FALLBACK.subject.format(q=q) if "subject" in bad else frame.subject,
                            opening=FALLBACK.opening if "opening" in bad else frame.opening,
                            closing=FALLBACK.closing if "closing" in bad else frame.closing)
