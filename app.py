@@ -29,7 +29,7 @@ RED, ORANGE, YELLOW, GREEN, BLUE = (("#fde8e8", "#9b1c1c"), ("#feecdc", "#8a3c0b
                                     ("#fdf6b2", "#723b13"), ("#def7ec", "#03543f"),
                                     ("#e1effe", "#1e429f"))
 FLAG_COLORS = {"ABOVE INDEX": RED, "PART REPLACED": ORANGE, "NEW CHARGE": ORANGE,
-               "BLANKET INCREASE": YELLOW, "DECREASE": GREEN}
+               "UNIFORM INCREASE": YELLOW, "DECREASE": GREEN}
 VERDICT_COLORS = {"NO ANSWER": RED, "UNSUBSTANTIATED": RED, "ABOVE INDEX": RED,
                   "PARTLY EXPLAINED": ORANGE, "DOCUMENTS MISSING": ORANGE,
                   "CONCESSION OFFERED": BLUE, "SUPPORTED": GREEN, "PLAUSIBLE": GREEN}
@@ -192,16 +192,16 @@ if "findings" in ss:
     c2.metric("Lines needing clarification", int((~f["flag"].isin(["OK", "DECREASE"])).sum()))
     c3.metric("Cost above index", de.eur(extra))
 
-    blanket = f[f["flag"] == "BLANKET INCREASE"]
+    blanket = f[f["flag"] == "UNIFORM INCREASE"]
     if not blanket.empty:
-        st.warning(f"Blanket increase: {len(blanket)} parts all up "
+        st.warning(f"Uniform increase: {len(blanket)} parts all up "
                    f"{de.pct(blanket['change_pct'].median())} while the cost index rose "
                    f"{de.pct(blanket['index_pct'].median())}.")
     for line in ss.quote_checks:
         if "FLAG" in line:
             st.warning(line.replace("-> FLAG:", "").strip())
 
-    show = flagged[flagged["flag"] != "BLANKET INCREASE"][
+    show = flagged[flagged["flag"] != "UNIFORM INCREASE"][
         ["part_no", "description", "old_price", "new_price", "change_pct", "index_pct",
          "extra_cost_eur", "flag", "note"]]
     st.caption("All amounts in EUR. Extra cost = amount above what the cost index would justify.")

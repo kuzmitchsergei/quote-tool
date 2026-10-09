@@ -34,18 +34,18 @@ from draft_email import MODEL, SIGNOFF, TONES, EmailFrame, clean_text, has_figur
 
 TOLERANCE_PTS = 3.0   # claimed cost driver vs. index
 GAP_PTS = 1.0         # claimed cost driver vs. actual price increase
-QUESTIONED = ["ABOVE INDEX", "PART REPLACED", "NEW CHARGE", "BLANKET INCREASE"]
+QUESTIONED = ["ABOVE INDEX", "PART REPLACED", "NEW CHARGE", "UNIFORM INCREASE"]
 
 
 # ------------------------------------------------------- the items we asked about
 def questioned_items(df):
-    """One entry per item we asked about; the blanket increase counts as one item 'ALL'."""
+    """One entry per item we asked about; the uniform increase counts as one item 'ALL'."""
     items = []
-    blanket = df[df["flag"] == "BLANKET INCREASE"]
+    blanket = df[df["flag"] == "UNIFORM INCREASE"]
     if not blanket.empty:
         items.append({"id": "ALL", "label": f"general increase on {len(blanket)} parts",
                       "change": blanket["change_pct"].median(), "index": blanket["index_pct"].median(),
-                      "flag": "BLANKET INCREASE"})
+                      "flag": "UNIFORM INCREASE"})
     for _, r in df[df["flag"].isin(QUESTIONED[:3])].iterrows():
         label = re.sub(r"\s*\((replaces [^)]*|new)\)", "", r["description"])
         items.append({"id": r["part_no"], "label": label,

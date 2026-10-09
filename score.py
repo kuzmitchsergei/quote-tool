@@ -20,7 +20,7 @@ EXPECTED = {
     "part_supersession": "PART REPLACED",
     "new_fee": "NEW CHARGE",
     "new_percentage_surcharge": "NEW CHARGE",
-    "blanket_increase_above_index": "BLANKET INCREASE",
+    "blanket_increase_above_index": "UNIFORM INCREASE",
 }
 
 found = 0

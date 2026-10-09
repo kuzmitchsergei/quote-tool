@@ -110,7 +110,7 @@ def compare(new, meta, history, index):
 
 
 def mark_blanket_increase(df):
-    """If most parts rose by the same %, call it one blanket increase instead of
+    """If most parts rose by the same %, call it one uniform increase instead of
     many separate flags - so the real outliers stand out."""
     parts = df[df["part_no"].str.match(r"^[A-Z]-\d") & df["change_pct"].notna()]
     if parts.empty:
@@ -118,7 +118,7 @@ def mark_blanket_increase(df):
     median = parts["change_pct"].median()
     same = parts[(parts["change_pct"] - median).abs() <= 0.3]
     if len(same) >= len(parts) / 2 and (same["above_index_pts"] > TOLERANCE_PTS).all():
-        df.loc[same.index, "flag"] = "BLANKET INCREASE"
+        df.loc[same.index, "flag"] = "UNIFORM INCREASE"
         df.loc[same.index, "note"] = f"Same +{median:.1f}% as most other parts"
     return df
 
@@ -152,12 +152,12 @@ if __name__ == "__main__":
 
     pd.set_option("display.width", 200)
     print(f"Supplier: {supplier}   Quote year: {year}\n")
-    blanket = df[df["flag"] == "BLANKET INCREASE"]
+    blanket = df[df["flag"] == "UNIFORM INCREASE"]
     if not blanket.empty:
-        print(f"BLANKET INCREASE: {len(blanket)} parts all up {blanket['change_pct'].median():+.1f}% "
+        print(f"UNIFORM INCREASE: {len(blanket)} parts all up {blanket['change_pct'].median():+.1f}% "
               f"(index {blanket['index_pct'].median():+.1f}%), "
               f"extra cost EUR {blanket['extra_cost_eur'].sum():,.2f}\n")
-    flagged = df[~df["flag"].isin(["OK", "BLANKET INCREASE"])]
+    flagged = df[~df["flag"].isin(["OK", "UNIFORM INCREASE"])]
     print(flagged[["part_no", "old_price", "new_price", "change_pct", "index_pct",
                    "extra_cost_eur", "flag", "note"]].to_string(index=False))
     print()
