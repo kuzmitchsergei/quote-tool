@@ -86,7 +86,7 @@ def fact_lines(df, lang):
     t = TEXT[lang]
     items, thanks = [], []
 
-    blanket = df[df["flag"] == "BLANKET INCREASE"]
+    blanket = df[df["flag"] == "UNIFORM INCREASE"]
     if not blanket.empty:
         items.append(t["blanket"].format(n=len(blanket), chg=pct(blanket["change_pct"].median(), lang),
                                          idx=pct(blanket["index_pct"].median(), lang)))
@@ -108,7 +108,7 @@ def fact_lines(df, lang):
         elif r["flag"] == "DECREASE":
             thanks.append(t["decrease"].format(**v))
 
-    extra = df.loc[df["flag"] != "DECREASE", "extra_cost_eur"].sum()
+    extra = df.loc[~df["flag"].isin(["OK", "DECREASE"]), "extra_cost_eur"].sum()
     return items, thanks, t["impact"].format(extra=eur(extra, lang))
 
 

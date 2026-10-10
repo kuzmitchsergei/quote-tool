@@ -163,7 +163,7 @@ if __name__ == "__main__":
     print()
     for line in quote_level_checks(df, meta, index, year):
         print(line)
-    extra = df.loc[df["flag"] != "DECREASE", "extra_cost_eur"].sum()
+    extra = df.loc[~df["flag"].isin(["OK", "DECREASE"]), "extra_cost_eur"].sum()
     print(f"\nCost above index (unit prices + new charges): EUR {extra:,.2f}")
 
     out = f"{pdf_path.with_suffix('')}_findings.csv"

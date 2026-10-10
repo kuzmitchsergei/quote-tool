@@ -240,7 +240,7 @@ def page_new():
 
     if "findings" in ss:
         f = ss.findings
-        extra = f.loc[f["flag"] != "DECREASE", "extra_cost_eur"].sum()
+        extra = f.loc[~f["flag"].isin(["OK", "DECREASE"]), "extra_cost_eur"].sum()
         flagged = f[~f["flag"].isin(["OK"])]
         c1, c2, c3 = st.columns(3)
         c1.metric("Lines analysed", len(f))
