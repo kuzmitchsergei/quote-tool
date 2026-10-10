@@ -444,8 +444,16 @@ def page_cases():
     if cases.empty:
         st.info("No cases yet. Analyse a quotation under 'New analysis' and click 'Open case'.")
         return
+    n_arch = int(cases["archived"].sum())
+    show_arch = st.toggle(f"Show archived cases ({n_arch})", value=False) if n_arch else False
+    if not show_arch:
+        cases = cases[cases["archived"] == 0]
+    if cases.empty:
+        st.info("All cases are archived. Switch on 'Show archived cases' to see them.")
+        return
     labels = {int(r.id): f"{r.quote_number} · {r.supplier} · "
                          f"{'closed' if r.status == 'closed' else f'round {r.round}, {int(r.open_items)} open'}"
+                         f"{' · archived' if r.archived else ''}"
               for r in cases.itertuples()}
     ids = list(labels)
     if ss.get("case_id") not in ids:
@@ -490,6 +498,43 @@ def page_cases():
             st.text(e["body"] or "")
     st.download_button("Download negotiation record (.txt)", cs.export_text(cid),
                        file_name=f"{case['quote_number']}_negotiation_record.txt")
+
+    with st.expander("Case actions: close, archive, delete"):
+        a1, a2, a3 = st.columns(3)
+        with a1:
+            st.markdown("**Close / reopen**")
+            if case["status"] == "open":
+                st.caption("Marks all remaining open points as resolved by you, e.g. after an agreement "
+                           "by phone. Recorded in the history.")
+                note = st.text_input("Note (optional)", key=f"closenote_{cid}",
+                                     placeholder="e.g. agreed -3% on all parts by phone")
+                if st.button("Close case", key=f"close_{cid}"):
+                    cs.close_case(cid, note)
+                    ss.pop("pending", None)
+                    st.rerun()
+            else:
+                st.caption("Reopen to continue the negotiation.")
+                if st.button("Reopen case", key=f"reopen_{cid}"):
+                    cs.reopen_case(cid)
+                    st.rerun()
+        with a2:
+            st.markdown("**Archive**")
+            st.caption("Hides the case from the list. Nothing is removed; show archived cases with the "
+                       "switch at the top.")
+            if st.button("Unarchive" if case["archived"] else "Archive", key=f"arch_{cid}"):
+                cs.set_archived(cid, not case["archived"])
+                st.rerun()
+        with a3:
+            st.markdown("**Delete**")
+            st.caption("Removes the case. The negotiation record is first saved as a text file in "
+                       "cases/deleted/.")
+            sure = st.checkbox("Yes, delete this case", key=f"sure_{cid}")
+            if st.button("Delete case", key=f"del_{cid}", disabled=not sure):
+                path = cs.delete_case(cid)
+                ss.pop("pending", None)
+                ss.pop("case_id", None)
+                st.toast(f"Case deleted. Record saved: cases/deleted/{path.name}")
+                st.rerun()
 
     if case["status"] == "closed":
         st.success("All points are resolved. The negotiation record documents every step.")

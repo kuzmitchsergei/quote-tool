@@ -40,6 +40,9 @@ def _db():
             id INTEGER PRIMARY KEY, case_id INTEGER, round INTEGER, kind TEXT, created TEXT,
             title TEXT, body TEXT, data TEXT);
     """)
+    cols = [r["name"] for r in con.execute("PRAGMA table_info(cases)")]
+    if "archived" not in cols:
+        con.execute("ALTER TABLE cases ADD COLUMN archived INTEGER DEFAULT 0")
     return con
 
 
@@ -96,6 +99,7 @@ def list_cases():
     con = _db()
     rows = con.execute("""
         SELECT c.id, c.supplier, c.quote_number, c.quote_date, c.status, c.round, c.created,
+               COALESCE(c.archived, 0) AS archived,
                SUM(i.status = 'open') AS open_items, COUNT(i.item_id) AS items,
                SUM(CASE WHEN i.status = 'open' THEN i.extra_cost ELSE 0 END) AS open_amount
         FROM cases c LEFT JOIN items i ON i.case_id = c.id
@@ -112,7 +116,7 @@ def get_case(cid):
              for r in con.execute("SELECT * FROM items WHERE case_id = ? ORDER BY rowid", (cid,))]
     events = [dict(r) for r in con.execute(
         "SELECT * FROM events WHERE case_id = ? ORDER BY id", (cid,))]
-    return {"id": c["id"], "supplier": c["supplier"], "quote_number": c["quote_number"],
+    return {"id": c["id"], "archived": bool(c["archived"] or 0), "supplier": c["supplier"], "quote_number": c["quote_number"],
             "quote_date": c["quote_date"], "status": c["status"], "round": c["round"],
             "created": c["created"], "meta": json.loads(c["meta"]),
             "findings": pd.read_json(io.StringIO(c["findings"]), orient="records"),
@@ -186,3 +190,47 @@ def export_text(cid):
     for e in c["events"]:
         out += ["", f"[{e['created']}] Round {e['round']} - {e['title']}", "-" * 70, e["body"] or ""]
     return "\n".join(out)
+
+
+# ------------------------------------------------------------------ case actions
+def close_case(cid, note=""):
+    """Buyer marks the case as resolved: all remaining open points are closed by the buyer."""
+    con = _db()
+    with con:
+        rnd = con.execute("SELECT round FROM cases WHERE id = ?", (cid,)).fetchone()["round"]
+        n = con.execute("SELECT COUNT(*) FROM items WHERE case_id = ? AND status = 'open'",
+                        (cid,)).fetchone()[0]
+        con.execute("UPDATE items SET status = 'closed', decided_by = 'buyer' "
+                    "WHERE case_id = ? AND status = 'open'", (cid,))
+        con.execute("UPDATE cases SET status = 'closed' WHERE id = ?", (cid,))
+        _event(con, cid, rnd, "closed", f"Case closed by buyer ({n} open point(s) closed)", note)
+
+
+def reopen_case(cid):
+    con = _db()
+    with con:
+        rnd = con.execute("SELECT round FROM cases WHERE id = ?", (cid,)).fetchone()["round"]
+        con.execute("UPDATE cases SET status = 'open' WHERE id = ?", (cid,))
+        _event(con, cid, rnd, "decision", "Case reopened by buyer", "")
+
+
+def set_archived(cid, archived=True):
+    con = _db()
+    with con:
+        con.execute("UPDATE cases SET archived = ? WHERE id = ?", (1 if archived else 0, cid))
+
+
+def delete_case(cid):
+    """Removes the case from the database. Its negotiation record is saved first as a text file
+    in cases/deleted/, so the history is never lost by accident. Returns that file's path."""
+    record = export_text(cid)
+    c = get_case(cid)
+    folder = FOLDER / "deleted"
+    folder.mkdir(exist_ok=True)
+    path = folder / f"{c['quote_number'] or 'case'}_{cid}_{datetime.now():%Y%m%d_%H%M%S}.txt"
+    path.write_text(record)
+    con = _db()
+    with con:
+        for table, col in (("events", "case_id"), ("items", "case_id"), ("cases", "id")):
+            con.execute(f"DELETE FROM {table} WHERE {col} = ?", (cid,))
+    return path
