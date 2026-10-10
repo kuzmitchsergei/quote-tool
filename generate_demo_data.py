@@ -419,6 +419,24 @@ We hope this clarifies the adjustments.
 Kind regards
 Sales Department
 """)
+(OUT / "reply_OEM_Gamma_2026_round2.txt").write_text("""From: Sales, OEM Gamma Systems GmbH
+Subject: RE: RE: Quotation Q-GA-2026-009 - our review of your reply
+
+Dear Sir or Madam,
+
+thank you for your detailed review.
+
+G-7101 Servo motor: after reviewing the copper price development, we are prepared to limit the increase on the servo motor to 4%. A revised quotation will follow.
+
+G-7144 Bearing unit: please find attached the price notification of our bearing supplier, confirming a 15% increase on the bearings used in this unit.
+
+G-7130 Gear: we maintain our position. The special steel grades used for hardened gears have developed differently from general steel indices.
+
+Regarding G-7115 and G-7122 we are still clarifying the cost development with our production and will come back to you shortly.
+
+Kind regards
+Sales Department
+""")
 print(f"Gamma 2026 total: EUR {gamma_total:,.2f}")
 
 for row in answer_key:

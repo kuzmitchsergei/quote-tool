@@ -147,25 +147,36 @@ def check_material(item, claim, ctx, name):
 
 def check_sub_supplier(item, claim, ctx, name):
     """Sub-supplier claims cannot be verified directly - so ask for evidence, compute the
-    pass-through, and point to direct sourcing for standard components."""
+    pass-through, and point to direct sourcing for standard components.
+    Once the evidence is provided, only the pass-through question remains."""
     shares = ctx["shares"]
     chg, idx = item["change"], item["index"]
-    issues = ["please send us the sub-supplier's price notification (a redacted copy is sufficient)"]
-    justified = None
+    has_docs = claim.documents_attached
+    issues = (["thank you for the sub-supplier's price notification"] if has_docs else
+              ["please send us the sub-supplier's price notification (a redacted copy is sufficient)"])
+    justified, gap = None, False
     if item["id"] in shares.index:
         part = shares.loc[item["id"]]
         share = float(part["share_pct"]) / 100
         if claim.claimed_pct is not None:
             justified = share * claim.claimed_pct + (1 - share) * idx
-            if chg - justified > GAP_PTS:
-                issues.append(f"the bought-in component is about {share:.0%} of this part's cost, so even "
-                              f"a {pct(claim.claimed_pct)} sub-supplier increase would justify about "
-                              f"{pct(justified)}, not {pct(chg)}")
-        if str(part.get("standard_component", "")).lower() == "yes":
+            gap = chg - justified > GAP_PTS
+            if gap:
+                issues.append(f"the bought-in component is about {share:.0%} of this part's cost, so "
+                              f"{'the' if has_docs else 'even a'} {pct(claim.claimed_pct)} sub-supplier "
+                              f"increase justifies about {pct(justified)}, not {pct(chg)}"
+                              + (". Please revise the price accordingly" if has_docs else ""))
+        if str(part.get("standard_component", "")).lower() == "yes" and not has_docs:
             issues.append("as this appears to be a standard catalogue component, please also state its "
                           "manufacturer and part number")
-    else:
+    elif not has_docs:
         issues.append("please state the share of the bought-in component in this part's cost")
-    if claim.claimed_pct is not None and claim.claimed_pct - idx > TOLERANCE_PTS:
+    if not has_docs and claim.claimed_pct is not None and claim.claimed_pct - idx > TOLERANCE_PTS:
         issues.append(f"for comparison, the general price index for machine parts rose {pct(idx)}")
+
+    if has_docs and not gap:
+        return ("PLAUSIBLE - CHECK DOCUMENTS",
+                sentences(name, issues + ["we will review it and come back to you if needed"]), justified)
+    if has_docs:
+        return "PARTLY EXPLAINED", sentences(name, issues), justified
     return "EVIDENCE REQUESTED", sentences(name, issues), justified

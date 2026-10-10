@@ -42,7 +42,7 @@
     "last_month": "2026-09"
   },
   "steel": {
-    "source": "steel: Eurostat, Producer prices in industry (sts_inpp_m), EU27, NACE C24.1 Manufacture of basic iron and steel and of ferro-alloys, index 2021=100, not seasonally adjusted, https://ec.europa.eu/eurostat/databrowser/view/sts_inpp_m/default/",
+    "source": "steel: Eurostat, Producer prices in industry (sts_inpp_m), EU27, NACE C24.1 Manufacture of basic iron and steel and of ferro-alloys, index 2021=100, not seasonally adjusted, https://ec.europa.eu/eurostat/databrowser/view/sts_inpp_m/default/table",
     "imported": "2026-10-10",
     "last_month": "2026-02"
   }

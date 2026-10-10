@@ -108,6 +108,10 @@ def read_reply(reply_text, items):
 
 
 # ------------------------------------- 1b. Python cross-checks the AI's reading
+DOC_WORDS = ("attached", "enclosed", "please find the", "in the attachment", "see attachment")
+CONCESSION_WORDS = ("prepared to reduce", "prepared to limit", "willing to reduce", "we will reduce",
+                    "we can reduce", "we waive", "prepared to waive", "willing to waive",
+                    "limit the increase", "withdraw the")
 SUB_SUPPLIER_WORDS = ("sub-supplier", "subsupplier", "sub supplier", "our supplier", "our vendor",
                       "purchased part", "bought-in", "supplier for the")
 PCT = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:%|per ?cent)", re.I)
@@ -137,11 +141,12 @@ def cross_check(reply_text, items, by_item):
         claim, notes = claims.get(iid), []
 
         if claim is None:
-            if not (sub or commodity):
+            if not (sub or commodity or any(w in text for w in CONCESSION_WORDS)):
                 continue
             claim = Claim(item=item["id"], category="sub_supplier" if sub else "raw_material",
                           material=None if sub else market.COMMODITY_LABELS.get(commodity), claimed_pct=text_pct,
-                          documents_attached=False, concession=False,
+                          documents_attached=any(w in text for w in DOC_WORDS),
+                          concession=any(w in text for w in CONCESSION_WORDS),
                           summary=" ".join(para.split())[:160])
             notes.append("the AI missed this justification - added from the reply text")
         else:
@@ -163,6 +168,12 @@ def cross_check(reply_text, items, by_item):
                 was = "none" if claim.claimed_pct is None else f"{claim.claimed_pct:g}%"
                 update["claimed_pct"] = text_pct
                 notes.append(f"percentage taken from the reply text ({text_pct:g}%, AI read {was})")
+            if any(w in text for w in DOC_WORDS) and not claim.documents_attached:
+                update["documents_attached"] = True
+                notes.append("the reply mentions an attached document")
+            if any(w in text for w in CONCESSION_WORDS) and not claim.concession:
+                update["concession"] = True
+                notes.append("the reply offers a reduction")
             if update:
                 claim = claim.model_copy(update=update)
         if notes:
