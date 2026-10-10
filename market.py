@@ -21,9 +21,11 @@ TOLERANCE_PTS = 3.0
 GAP_PTS = 1.0
 
 COMMODITY_LABELS = {"copper": "copper", "aluminium": "aluminium", "steel": "steel",
-                    "natural_rubber": "natural rubber", "brent": "crude oil (Brent)"}
+                    "natural_rubber": "natural rubber", "brent": "crude oil (Brent)",
+                    "nickel": "nickel", "iron_ore": "iron ore", "gas_europe": "natural gas (Europe)"}
 # words a supplier might use -> commodity series; checked in this order
-KEYWORDS = [("natural rubber", "natural_rubber"), ("synthetic rubber", "brent"), ("epdm", "brent"),
+KEYWORDS = [("natural gas", "gas_europe"), ("nickel", "nickel"), ("iron ore", "iron_ore"),
+            ("natural rubber", "natural_rubber"), ("synthetic rubber", "brent"), ("epdm", "brent"),
             ("copper", "copper"), ("alumin", "aluminium"), ("steel", "steel"),
             ("oil", "brent"), ("crude", "brent"), ("petro", "brent"), ("plastic", "brent"),
             ("pvc", "brent"), ("polymer", "brent"), ("rubber", "natural_rubber")]
@@ -43,10 +45,16 @@ def sentences(name, issues):
     return f"{name}: " + " ".join(i[0].upper() + i[1:] + "." for i in issues)
 
 
-def load_context(quote_date, shares=None):
-    """Everything the checks need. `shares` can be passed in (e.g. edited in the app)."""
+def demo_prices():
     prices = pd.read_csv(DATA / "market_prices.csv")
-    prices = prices[prices["month"] != "note"].set_index("month").astype(float)
+    return prices[prices["month"] != "note"].set_index("month").astype(float)
+
+
+def load_context(quote_date, shares=None, prices=None):
+    """Everything the checks need. `shares` and `prices` can be passed in (e.g. edited or
+    imported in the app); by default the synthetic demo files are used."""
+    if prices is None:
+        prices = demo_prices()
     if shares is None:
         shares = pd.read_csv(DATA / "material_shares.csv")
     return {"quote_date": str(quote_date)[:7], "prices": prices,
@@ -63,12 +71,19 @@ def commodity_of(text):
 
 def market_change(prices, commodity, quote_month):
     """12-month average before the quote vs. the 12 months before that, plus the peak monthly
-    year-on-year change in the last 12 months (suppliers like to quote the peak)."""
-    months = list(prices.index)
-    end = max(i for i, m in enumerate(months) if m < quote_month)       # last full month
-    recent, earlier = prices[commodity].iloc[end - 11:end + 1], prices[commodity].iloc[end - 23:end - 11]
+    year-on-year change in the last 12 months (suppliers like to quote the peak).
+    Uses explicit calendar months, so gaps in the data are detected, never skipped.
+    Returns (None, None) if any of the 24 months is missing."""
+    q = pd.Period(str(quote_month)[:7], freq="M")
+    need = [str(q - k) for k in range(24, 0, -1)]
+    if commodity not in prices.columns:
+        return None, None
+    s = prices[commodity].reindex(need)
+    if s.isna().any():
+        return None, None
+    earlier, recent = s.iloc[:12].values, s.iloc[12:].values
     avg = (recent.mean() / earlier.mean() - 1) * 100
-    peak = max((recent.iloc[k] / earlier.iloc[k] - 1) * 100 for k in range(12))
+    peak = max((recent[k] / earlier[k] - 1) * 100 for k in range(12))
     return avg, peak
 
 
@@ -86,6 +101,8 @@ def check_material(item, claim, ctx, name):
 
     issues, verdicts = [], []
     part_avg, _ = market_change(prices, key, ctx["quote_date"])
+    if part_avg is None:
+        return None          # no complete data for this part's material -> generic rules apply
 
     # 1. right material?
     if claimed_key and claimed_key != key:
@@ -97,6 +114,9 @@ def check_material(item, claim, ctx, name):
     # 2. right figure?
     check_key = claimed_key if claimed_key in prices.columns else key
     avg, peak = market_change(prices, check_key, ctx["quote_date"])
+    if avg is None:
+        check_key = key
+        avg, peak = market_change(prices, key, ctx["quote_date"])
     if claim.claimed_pct is not None and claim.claimed_pct - avg > TOLERANCE_PTS:
         verdicts.append("NOT SUPPORTED BY MARKET DATA")
         if abs(claim.claimed_pct - peak) <= 2.0:

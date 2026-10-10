@@ -107,6 +107,70 @@ def read_reply(reply_text, items):
     return ReplyAnalysis.model_validate_json(response.message.content).claims
 
 
+# ------------------------------------- 1b. Python cross-checks the AI's reading
+SUB_SUPPLIER_WORDS = ("sub-supplier", "subsupplier", "sub supplier", "our supplier", "our vendor",
+                      "purchased part", "bought-in", "supplier for the")
+PCT = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:%|per ?cent)", re.I)
+
+
+def paragraph_for(reply_text, item_id):
+    """The paragraph of the reply that mentions this part number (None if not mentioned)."""
+    paragraphs = [p for p in re.split(r"\n\s*\n", reply_text) if item_id.lower() in p.lower()]
+    return paragraphs[0] if len(paragraphs) == 1 else None
+
+
+def cross_check(reply_text, items, by_item):
+    """Compare the AI's reading with what the reply literally says about each part.
+    Only clear, unambiguous facts are corrected: a single percentage in the paragraph,
+    a named commodity, or an explicit sub-supplier reference. Returns (claims, corrections)."""
+    claims, corrections = dict(by_item), {}
+    for item in items:
+        iid = item["id"].upper()
+        para = paragraph_for(reply_text, item["id"])
+        if para is None:
+            continue
+        text = para.lower()
+        numbers = {float(n.replace(",", ".")) for n in PCT.findall(para)}
+        text_pct = numbers.pop() if len(numbers) == 1 else None
+        commodity = market.commodity_of(para)
+        sub = any(w in text for w in SUB_SUPPLIER_WORDS)
+        claim, notes = claims.get(iid), []
+
+        if claim is None:
+            if not (sub or commodity):
+                continue
+            claim = Claim(item=item["id"], category="sub_supplier" if sub else "raw_material",
+                          material=None if sub else market.COMMODITY_LABELS.get(commodity), claimed_pct=text_pct,
+                          documents_attached=False, concession=False,
+                          summary=" ".join(para.split())[:160])
+            notes.append("the AI missed this justification - added from the reply text")
+        else:
+            update = {}
+            if sub and claim.category not in ("sub_supplier", "technical_change") and not claim.concession:
+                update["category"] = "sub_supplier"
+                notes.append(f"AI read '{claim.category.replace('_', ' ')}', the reply names a sub-supplier")
+            elif (commodity and not sub and not claim.concession
+                  and claim.category in ("market_conditions", "other")):
+                update["category"], update["material"] = "raw_material", market.COMMODITY_LABELS.get(commodity)
+                notes.append(f"AI read '{claim.category.replace('_', ' ')}', the reply names "
+                             f"{market.COMMODITY_LABELS.get(commodity, commodity)}")
+            elif commodity and claim.category == "raw_material" and not claim.material:
+                update["material"] = market.COMMODITY_LABELS.get(commodity)
+                notes.append(f"material added from the reply text "
+                             f"({market.COMMODITY_LABELS.get(commodity, commodity)})")
+            if text_pct is not None and (claim.claimed_pct is None
+                                         or abs(claim.claimed_pct - text_pct) > 0.05):
+                was = "none" if claim.claimed_pct is None else f"{claim.claimed_pct:g}%"
+                update["claimed_pct"] = text_pct
+                notes.append(f"percentage taken from the reply text ({text_pct:g}%, AI read {was})")
+            if update:
+                claim = claim.model_copy(update=update)
+        if notes:
+            claims[iid] = claim
+            corrections[item["id"]] = "; ".join(notes)
+    return claims, corrections
+
+
 # ----------------------------------------------- 2. Python judges each claim
 def judge(item, claim, ctx=None):
     """Fixed rules. Returns (verdict, follow-up line for the email, justified % or None).
@@ -255,6 +319,9 @@ if __name__ == "__main__":
     by_item = {}
     for c in claims:
         by_item.setdefault(c.item.strip().upper(), c)   # first claim per item
+    by_item, corrections = cross_check(Path(args.reply).read_text(), items, by_item)
+    for part, note in corrections.items():
+        print(f"CROSS-CHECK {part}: {note}")
 
     results, rows = [], []
     for item in items:

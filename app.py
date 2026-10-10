@@ -16,6 +16,7 @@ import streamlit as st
 
 import analyze_reply as ar
 import market
+import market_data as md
 import compare as cmp
 import draft_email as de
 import extract as ex
@@ -42,7 +43,7 @@ COLUMNS = {"part_no": "Part no.", "description": "Description", "old_price": "La
            "new_price": "New price", "change_pct": "Change", "index_pct": "Index",
            "above_index_pts": "Above index (pts)", "extra_cost_eur": "Extra cost",
            "flag": "Status", "note": "Note", "item": "Item", "verdict": "Verdict",
-           "category": "Category", "claimed_pct": "Claimed by supplier", "price_change_pct": "Price change",
+           "category": "Category", "claimed_pct": "Claimed by supplier", "price_change_pct": "Price change", "reading": "Reading",
            "justified_pct": "Justified", "pos": "Pos", "unit": "Unit",
            "qty": "Qty", "unit_price_eur": "Unit price", "total_eur": "Total"}
 
@@ -100,7 +101,8 @@ def styled(df, status_col=None, colors=None):
 
 def reset_from(step):
     """Clear results of this step and all later steps."""
-    order = ["lines", "findings", "email", "reply_results", "claims", "frame", "asked_items"]
+    order = ["lines", "findings", "email", "reply_results", "claims", "frame", "asked_items",
+             "corrections"]
     for key in order[order.index(step):]:
         ss.pop(key, None)
 
@@ -121,7 +123,44 @@ with st.sidebar:
     st.divider()
     st.markdown("**Price history**")
     st.caption(f"{DATA.name}/quote_history.csv\n\n{DATA.name}/benchmark_index.csv\n\n"
-               f"{DATA.name}/market_prices.csv\n\nAll index and market values are synthetic demo data.")
+               "Quote history and cost index are synthetic demo data.")
+    st.divider()
+    st.markdown("**Market data**")
+    real = md.load_real_prices()
+    source = st.radio("Use for the checks", ["Demo data (synthetic)", "Real data (imported)"],
+                      index=0, disabled=real is None,
+                      help=None if real is not None else "Import the World Bank file below first.")
+    use_real = source.startswith("Real") and real is not None
+    with st.expander("Import World Bank prices"):
+        st.caption("Free monthly file 'CMO-Historical-Data-Monthly.xlsx' (Pink Sheet, monthly prices) "
+                   "from worldbank.org/en/research/commodity-markets - updated monthly. Download it "
+                   "with your browser, then drop it here. The tool itself never goes online.")
+        wb_file = st.file_uploader("World Bank monthly prices (.xlsx)", type="xlsx",
+                                   label_visibility="collapsed")
+        if wb_file is not None and ss.get("wb_imported") != wb_file.name + str(wb_file.size):
+            try:
+                df, used = md.import_world_bank(wb_file)
+                md.save_world_bank(df, used, wb_file.name)
+                ss.wb_imported = wb_file.name + str(wb_file.size)
+                ss.wb_message = (f"Imported {len(used)} series up to "
+                                 f"{df.dropna(how='all').index[-1]}: "
+                                 + ", ".join(market.COMMODITY_LABELS.get(k, k) for k, _ in used))
+                st.rerun()
+            except Exception as e:
+                st.error(str(e))
+        if ss.get("wb_message"):
+            st.success(ss.wb_message)
+    added = md.extra_series()
+    if added:
+        names = ", ".join(market.COMMODITY_LABELS.get(n, n) for n in added)
+        st.caption(f"Added manually: {names}")
+        if st.button("Remove added series", help="Moves them to market_data/removed/ - nothing is "
+                                                 "deleted, you can restore them by moving the file back."):
+            moved = md.remove_extra()
+            ss.pop("frame", None)
+            ss.wb_message = None
+            st.toast(f"Removed {names}. Backup: market_data/removed/{moved.name}")
+            st.rerun()
     st.divider()
     tone = st.radio("Email tone", list(de.TONES), index=0, format_func=str.capitalize)
 
@@ -247,13 +286,14 @@ if "email" in ss:
         by_item = {}
         for c in claims:
             by_item.setdefault(c.item.strip().upper(), c)
+        by_item, ss.corrections = ar.cross_check(reply, items, by_item)
         ss.asked_items, ss.claims = items, by_item
         ss.reply_results = True
 
 
 def judge_all(shares):
     """Rules only - re-run instantly whenever the buyer edits the material shares."""
-    ctx = market.load_context(ss.meta["quote_date"], shares)
+    ctx = market.load_context(ss.meta["quote_date"], shares, real if use_real else None)
     results, rows = [], []
     for item in ss.asked_items:
         claim = ss.claims.get(item["id"].upper())
@@ -264,7 +304,8 @@ def judge_all(shares):
                      "claimed_pct": claim.claimed_pct if claim else None,
                      "price_change_pct": item["change"],
                      "justified_pct": justified,
-                     "supplier says": claim.summary if claim else "— not addressed —"})
+                     "supplier says": claim.summary if claim else "— not addressed —",
+                     "reading": "corrected" if item["id"] in ss.corrections else "AI"})
     return results, pd.DataFrame(rows), ctx
 
 
@@ -298,7 +339,16 @@ if "reply_results" in ss:
     c2.metric("Concessions", int((r["verdict"] == "CONCESSION OFFERED").sum()))
     c3.metric("Still open", int((~r["verdict"].isin(
         ["SUPPORTED", "PLAUSIBLE - CHECK DOCUMENTS", "CONCESSION OFFERED"])).sum()))
-    st.dataframe(styled(r, "verdict", VERDICT_COLORS), hide_index=True, width="stretch")
+    st.dataframe(styled(r, "verdict", VERDICT_COLORS).map(
+        lambda v: "background-color: #e1effe; color: #1e429f; font-weight: 600" if v == "corrected" else "",
+        subset=["Reading"]), hide_index=True, width="stretch")
+    if ss.corrections:
+        with st.expander(f"Rule-based check corrected the AI's reading on {len(ss.corrections)} item(s)"):
+            st.caption("For every part, Python re-reads the supplier's paragraph and compares it with the "
+                       "AI's interpretation. Clear facts (a single percentage, a named material, a "
+                       "sub-supplier) override the AI.")
+            for part, note in ss.corrections.items():
+                st.markdown(f"**{part}**: {note}")
     st.caption("Claimed by supplier = the cost increase the supplier states (e.g. copper +18%). "
                "Price change = how much this part's price actually rose. "
                "Justified = material share × actual market change + rest × general cost index. "
@@ -308,14 +358,51 @@ if "reply_results" in ss:
     used = sorted(({k for k in relevant["material_key"]} | claimed) & set(ctx["prices"].columns))
     if not relevant.empty and used:
         with st.expander("Market data used (last 12 months vs. 12 months before)", expanded=False):
-            rows = []
+            rows, srcs = [], md.sources()
             for k in used:
                 avg, peak = market.market_change(ctx["prices"], k, ctx["quote_date"])
-                rows.append({"Commodity": market.COMMODITY_LABELS[k][0].upper() + market.COMMODITY_LABELS[k][1:], "12-month average": f"{avg:+.1f}%",
-                             "Peak single month": f"{peak:+.1f}%"})
+                if avg is None:
+                    continue
+                label = market.COMMODITY_LABELS.get(k, k)
+                rows.append({"Commodity": label[0].upper() + label[1:],
+                             "12-month average": f"{avg:+.1f}%", "Peak single month": f"{peak:+.1f}%",
+                             "Source": srcs.get(k, {}).get("source", "") if use_real else "synthetic demo"})
             st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
-            st.caption("SYNTHETIC demo data. For real use, import published monthly commodity prices "
-                       "(e.g. World Bank, LME) or national producer price indices - the tool works offline.")
+            st.caption("Real imported data." if use_real else
+                       "SYNTHETIC demo data. Switch to real data in the sidebar after importing the "
+                       "World Bank file.")
+
+    # ---- commodities the checks need but the active market data does not cover
+    needed = ({k for k in relevant["material_key"] if k in market.COMMODITY_LABELS} | claimed) - {None}
+    gaps = md.missing(ctx["prices"], needed, ss.meta["quote_date"])
+    if gaps:
+        names = ", ".join(market.COMMODITY_LABELS.get(g, g) for g in gaps)
+        st.warning(f"No complete market data for: {names}. Claims about these materials are checked "
+                   "with general rules only.")
+        with st.expander(f"Get the missing data ({names})", expanded=True):
+            st.markdown("**1. Copy this request** into an external AI assistant with web search, "
+                        "or send it to a colleague.")
+            st.caption("It contains only commodity names, months and a file format - nothing from "
+                       "the quotation, the supplier or your prices.")
+            st.code(md.data_request(gaps, ss.meta["quote_date"]), language=None, wrap_lines=True)
+            st.markdown("**2. Paste the answer here.** The tool checks it before using it.")
+            with st.form("paste_form", border=False):
+                pasted = st.text_area("Answer", height=180, key="pasted_data",
+                                      label_visibility="collapsed")
+                submitted = st.form_submit_button("Check and add data", type="primary")
+            if submitted and not pasted.strip():
+                st.warning("Paste the answer into the box first.")
+            if submitted and pasted.strip():
+                df, errors, warnings = md.check_pasted(pasted, gaps, ss.meta["quote_date"])
+                for e in errors:
+                    st.error(e)
+                for w in warnings:
+                    st.warning(w)
+                if df is not None:
+                    md.save_extra(df, pasted)
+                    ss.pop("frame", None)
+                    st.success("Data added. Re-checking with the new data…")
+                    st.rerun()
 
     followup = ar.assemble(ss.frame, results)
     st.text_area("Follow-up email", followup, height=460, key=f"followup_{hash(followup)}")

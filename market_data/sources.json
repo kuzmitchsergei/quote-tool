@@ -1,0 +1,49 @@
+{
+  "brent": {
+    "source": "World Bank Pink Sheet, column 'Crude oil, Brent'",
+    "file": "CMO-Historical-Data-Monthly.xlsx",
+    "imported": "2026-10-10",
+    "last_month": "2026-09"
+  },
+  "aluminium": {
+    "source": "World Bank Pink Sheet, column 'Aluminum'",
+    "file": "CMO-Historical-Data-Monthly.xlsx",
+    "imported": "2026-10-10",
+    "last_month": "2026-09"
+  },
+  "copper": {
+    "source": "World Bank Pink Sheet, column 'Copper'",
+    "file": "CMO-Historical-Data-Monthly.xlsx",
+    "imported": "2026-10-10",
+    "last_month": "2026-09"
+  },
+  "nickel": {
+    "source": "World Bank Pink Sheet, column 'Nickel'",
+    "file": "CMO-Historical-Data-Monthly.xlsx",
+    "imported": "2026-10-10",
+    "last_month": "2026-09"
+  },
+  "iron_ore": {
+    "source": "World Bank Pink Sheet, column 'Iron ore, cfr spot'",
+    "file": "CMO-Historical-Data-Monthly.xlsx",
+    "imported": "2026-10-10",
+    "last_month": "2026-09"
+  },
+  "natural_rubber": {
+    "source": "World Bank Pink Sheet, column 'Rubber, TSR20 **'",
+    "file": "CMO-Historical-Data-Monthly.xlsx",
+    "imported": "2026-10-10",
+    "last_month": "2026-09"
+  },
+  "gas_europe": {
+    "source": "World Bank Pink Sheet, column 'Natural gas, Europe'",
+    "file": "CMO-Historical-Data-Monthly.xlsx",
+    "imported": "2026-10-10",
+    "last_month": "2026-09"
+  },
+  "steel": {
+    "source": "steel: Eurostat, Producer prices in industry (sts_inpp_m), EU27, NACE C24.1 Manufacture of basic iron and steel and of ferro-alloys, index 2021=100, not seasonally adjusted, https://ec.europa.eu/eurostat/databrowser/view/sts_inpp_m/default/",
+    "imported": "2026-10-10",
+    "last_month": "2026-02"
+  }
+}
