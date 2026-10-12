@@ -31,6 +31,7 @@ On three fictional demo suppliers (OEM Alpha, OEM Beta, OEM Gamma) with 16 plant
 
 | File | Purpose |
 | --- | --- |
+| `app.py` | Web interface (Streamlit) |
 | `extract.py` | Reads the quotation PDF and cover letter |
 | `compare.py` | Compares lines with price history and benchmarks |
 | `draft_email.py` | Drafts the justification request |
@@ -39,6 +40,8 @@ On three fictional demo suppliers (OEM Alpha, OEM Beta, OEM Gamma) with 16 plant
 | `market_data.py` | Imports and validates market price series |
 | `cases.py` | Stores multi-round negotiations |
 | `mailfile.py` | Reads `.eml` and `.msg` email files |
+| `score.py` | Scores supplier claims against the actual price changes |
+| `generate_demo_data.py` | Creates the fictional demo suppliers and quotes |
 
 ## Running it
 
